@@ -65,6 +65,10 @@
                 <h2 class="slide-in">Recommended Movies</h2>
                 <div id="recommendations" class="recommendations-grid"></div>
             </section>
+            <section id="searchHistorySection" class="fade-in">
+                <h2 class="slide-in">Recent Searches</h2>
+                <ul id="searchHistoryList" class="search-history-list"></ul>
+            </section>
             <!-- Add this modal structure -->
             <div id="movieModal" class="movie-modal" style="display: none;">
                 <div class="modal-content">
@@ -84,5 +88,6 @@
         </footer>
     </div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/search-history.js') }}"></script>
 </body>
 </html>

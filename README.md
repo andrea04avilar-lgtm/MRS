@@ -62,6 +62,12 @@ pero presentaba varios problemas típicos de un sistema legado:
 - **Pipeline de GitHub Actions** (`.github/workflows/ci-cd.yml`): pruebas
   unitarias + cobertura, reportes de seguridad (`pip-audit`, `bandit`),
   pruebas E2E, build de imagen Docker, y deploy automático a producción.
+- **Historial de búsquedas** (`app/models/search_history.py`,
+  `/api/history`): cada búsqueda de recomendaciones (por título o género)
+  queda registrada en SQLite y se muestra en la página principal, como
+  funcionalidad adicional agregada durante la reingeniería — no se
+  limita a estabilizar lo existente, también aporta valor nuevo al
+  usuario final.
 
 ---
 

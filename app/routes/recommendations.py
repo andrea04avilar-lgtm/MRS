@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template
 import requests
 from app.services.recommendation_service import get_recommendations, get_content_based_recommendations
+from app.models.search_history import SearchHistory
 from config.config import Config
 
 bp = Blueprint('recommendations', __name__)
@@ -50,10 +51,20 @@ def get_movie_recommendations():
 
     if title:
         recommendations = get_recommendations_by_title(title, n, genre, min_rating)
+        SearchHistory.log_search('title', title, len(recommendations))
     else:
         recommendations = get_recommendations_by_criteria(genre, n, start_year, end_year, min_rating)
+        SearchHistory.log_search('genre', genre or 'todos', len(recommendations))
 
     return jsonify(recommendations)
+
+@bp.route('/api/history')
+def get_search_history():
+    """Devuelve las busquedas mas recientes (funcionalidad agregada durante
+    la reingenieria, para que los usuarios vean que han buscado antes)."""
+    limit = request.args.get('limit', default=10, type=int)
+    history = SearchHistory.get_recent(limit)
+    return jsonify([h.to_dict() for h in history])
 
 def get_recommendations_by_title(title, n, genre, min_rating):
     search_results = search_movies(title)

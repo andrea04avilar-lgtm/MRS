@@ -22,6 +22,13 @@ def create_database():
                  (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, 
                   movie_id INTEGER NOT NULL, rating FLOAT NOT NULL,
                   FOREIGN KEY (movie_id) REFERENCES movies (id))''')
+    # Historial de busqueda (funcionalidad agregada durante la reingenieria)
+    c.execute('''CREATE TABLE IF NOT EXISTS search_history
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  search_type TEXT NOT NULL,
+                  query TEXT NOT NULL,
+                  results_count INTEGER DEFAULT 0,
+                  searched_at TEXT NOT NULL DEFAULT (datetime('now')))''')
 
     # Insert sample data
     movies = [

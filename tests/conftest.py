@@ -43,6 +43,12 @@ def _seed_test_database(db_path):
            (id INTEGER PRIMARY KEY, title TEXT NOT NULL, genres TEXT NOT NULL,
             vote_average REAL DEFAULT 0)"""
     )
+    cur.execute(
+        """CREATE TABLE IF NOT EXISTS search_history
+           (id INTEGER PRIMARY KEY AUTOINCREMENT, search_type TEXT NOT NULL,
+            query TEXT NOT NULL, results_count INTEGER DEFAULT 0,
+            searched_at TEXT NOT NULL DEFAULT (datetime('now')))"""
+    )
     cur.executemany(
         "INSERT OR REPLACE INTO movies (id, title, genres, vote_average) VALUES (?, ?, ?, ?)",
         [
