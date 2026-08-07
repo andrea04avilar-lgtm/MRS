@@ -1,0 +1,5 @@
+id,title,overview,vote_average,vote_count,genres,keywords
+1,Alpha Quest,"A hero seeks a magic sword in a distant kingdom",8.5,1200,"[{""id"": 1, ""name"": ""Adventure""}]","[{""id"": 10, ""name"": ""sword""}]"
+2,Beta Storm,"A detective solves a crime in a rainy city",7.2,900,"[{""id"": 2, ""name"": ""Crime""}]","[{""id"": 11, ""name"": ""detective""}]"
+3,Gamma Love,"Two strangers fall in love during a road trip",6.8,300,"[{""id"": 3, ""name"": ""Romance""}]","[{""id"": 12, ""name"": ""roadtrip""}]"
+4,Delta Rising,"A hero seeks a magic sword to save the kingdom",9.1,2000,"[{""id"": 1, ""name"": ""Adventure""}]","[{""id"": 10, ""name"": ""sword""}]"

@@ -2,28 +2,57 @@ import logging
 from app.data_processing.demographic_filtering import get_top_movies
 from app.data_processing.content_based_filtering import prepare_content_based_data, get_recommendations as get_content_recommendations
 from app.models.movie import Movie
+from config.config import Config
 
 logging.basicConfig(level=logging.INFO)
 
-df, cosine_sim, indices = prepare_content_based_data()
+# Carga perezosa y a prueba de fallos del dataset de Kaggle (The Movies Dataset).
+# Si el CSV no está presente (por ejemplo en CI, tests, o un deploy ligero sin el
+# dataset descargado), la app NO debe crasharse: simplemente deshabilita el motor
+# de recomendación basado en contenido y sigue funcionando con el motor basado en
+# la base de datos SQLite.
+df, cosine_sim, indices = None, None, None
 
-def get_recommendations(genre=None, n=10, min_rating=0):
-    top_movies = get_top_movies(n * 2)
-    logging.info(f"Retrieved {len(top_movies)} top movies")
-
-    if top_movies.empty:
-        logging.warning("No top movies retrieved")
-        return []
-
-    recommendations = [
-        Movie(
-            id=row['id'],
-            title=row['title'],
-            genres=row.get('genres', ''),
-            rating=row.get('vote_average', 0)
+if Config.ENABLE_CONTENT_BASED:
+    try:
+        df, cosine_sim, indices = prepare_content_based_data()
+        logging.info("Motor de recomendación basado en contenido cargado correctamente")
+    except FileNotFoundError as exc:
+        logging.warning(
+            "Dataset de recomendación basado en contenido no encontrado (%s). "
+            "La app continuará usando únicamente el motor basado en base de datos.",
+            exc,
         )
-        for _, row in top_movies.iterrows()
-    ]
+    except Exception as exc:  # noqa: BLE001
+        logging.warning("No se pudo inicializar el motor basado en contenido: %s", exc)
+else:
+    logging.info("Motor de recomendación basado en contenido deshabilitado por configuración")
+
+def get_recommendations(genre=None, n=10, start_year=None, end_year=None, min_rating=0):
+    """Devuelve las mejores películas. Usa el dataset de Kaggle si está disponible;
+    si no, degrada de forma segura a la base de datos SQLite local (demo)."""
+    recommendations = None
+
+    if df is not None:
+        try:
+            top_movies = get_top_movies(n * 2)
+            if not top_movies.empty:
+                recommendations = [
+                    Movie(
+                        id=row['id'],
+                        title=row['title'],
+                        genres=row.get('genres', ''),
+                        rating=row.get('vote_average', 0)
+                    )
+                    for _, row in top_movies.iterrows()
+                ]
+        except FileNotFoundError:
+            logging.warning("Dataset no encontrado al pedir recomendaciones; usando base de datos local")
+
+    if recommendations is None:
+        logging.info("Usando motor basado en base de datos (fallback)")
+        db_movies = Movie.get_all()
+        recommendations = [m for m in db_movies if m.rating is not None]
 
     logging.info(f"Created {len(recommendations)} movie objects")
 
@@ -35,18 +64,17 @@ def get_recommendations(genre=None, n=10, min_rating=0):
         recommendations = [movie for movie in recommendations if movie.rating >= min_rating]
         logging.info(f"{len(recommendations)} movies after rating filter")
 
-    recommendations.sort(key=lambda x: x.rating, reverse=True)
+    recommendations.sort(key=lambda x: x.rating or 0, reverse=True)
     final_recommendations = recommendations[:n]
     logging.info(f"Returning {len(final_recommendations)} recommendations")
-
-    if not final_recommendations:
-        logging.warning("No recommendations found, returning top rated movies")
-        return [Movie(id=row['id'], title=row['title'], genres=row.get('genres', ''), rating=row.get('vote_average', 0))
-                for _, row in top_movies.head(n).iterrows()]
 
     return final_recommendations
 
 def get_content_based_recommendations(title, n=10):
+    if df is None or cosine_sim is None or indices is None:
+        logging.warning("Motor basado en contenido no disponible; devolviendo lista vacía")
+        return []
+
     content_recommendations = get_content_recommendations(title, df, cosine_sim, indices)
     logging.info(f"Retrieved {len(content_recommendations)} content-based recommendations")
 

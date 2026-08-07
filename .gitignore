@@ -2,18 +2,32 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
 
 # Virtual environment
 venv/
 env/
+.venv/
 
 # Flask
 instance/
 .webassets-cache
 
-# SQLite database
+# Base de datos y dataset (no se versionan; se generan/descargan aparte)
 data/*.db
 data/*.csv
+
+# Variables de entorno (secretos)
+.env
+
+# Coverage / test
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+pip-audit-report.json
+bandit-report.json
+flask.log
 
 # OS generated files
 .DS_Store

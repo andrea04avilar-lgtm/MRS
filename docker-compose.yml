@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - TMDB_API_KEY=${TMDB_API_KEY:-}
+      - DATABASE_PATH=/app/data/movies.db
+    volumes:
+      - movies_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  movies_data:

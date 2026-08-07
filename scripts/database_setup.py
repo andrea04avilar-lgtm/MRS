@@ -14,9 +14,10 @@ def create_database():
     conn = sqlite3.connect(Config.DATABASE_PATH)
     c = conn.cursor()
 
-    # Create tables
+    # Create tables (vote_average agregado: el modelo Movie y las rutas lo requieren)
     c.execute('''CREATE TABLE IF NOT EXISTS movies
-                 (id INTEGER PRIMARY KEY, title TEXT NOT NULL, genres TEXT NOT NULL)''')
+                 (id INTEGER PRIMARY KEY, title TEXT NOT NULL, genres TEXT NOT NULL,
+                  vote_average REAL DEFAULT 0)''')
     c.execute('''CREATE TABLE IF NOT EXISTS ratings
                  (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, 
                   movie_id INTEGER NOT NULL, rating FLOAT NOT NULL,
@@ -24,13 +25,13 @@ def create_database():
 
     # Insert sample data
     movies = [
-        (1, "The Shawshank Redemption", "Drama"),
-        (2, "The Godfather", "Crime,Drama"),
-        (3, "The Dark Knight", "Action,Crime,Drama"),
-        (4, "Pulp Fiction", "Crime,Drama"),
-        (5, "Forrest Gump", "Drama,Romance")
+        (1, "The Shawshank Redemption", "Drama", 9.3),
+        (2, "The Godfather", "Crime,Drama", 9.2),
+        (3, "The Dark Knight", "Action,Crime,Drama", 9.0),
+        (4, "Pulp Fiction", "Crime,Drama", 8.9),
+        (5, "Forrest Gump", "Drama,Romance", 8.8)
     ]
-    c.executemany('INSERT OR REPLACE INTO movies VALUES (?,?,?)', movies)
+    c.executemany('INSERT OR REPLACE INTO movies VALUES (?,?,?,?)', movies)
 
     ratings = [
         (1, 1, 1, 5.0),

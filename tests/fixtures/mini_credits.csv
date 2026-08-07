@@ -1,0 +1,5 @@
+id,cast,crew
+1,"[{""name"": ""Actor One""}, {""name"": ""Actor Two""}]","[{""job"": ""Director"", ""name"": ""Director One""}]"
+2,"[{""name"": ""Actor Three""}]","[{""job"": ""Director"", ""name"": ""Director Two""}]"
+3,"[{""name"": ""Actor Four""}]","[{""job"": ""Director"", ""name"": ""Director Three""}]"
+4,"[{""name"": ""Actor One""}]","[{""job"": ""Director"", ""name"": ""Director One""}]"

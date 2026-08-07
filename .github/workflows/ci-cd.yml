@@ -1,0 +1,175 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: mrs-modernized
+
+jobs:
+
+  # ------------------------------------------------------------------
+  # 1) Pruebas unitarias (Pytest) + cobertura
+  # ------------------------------------------------------------------
+  unit-tests:
+    name: Pruebas unitarias y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Ejecutar Pytest con cobertura (mínimo 80%)
+        run: |
+          pytest tests/ -v \
+            --ignore=tests/test_e2e.py \
+            --cov=app --cov=config \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=80
+
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # ------------------------------------------------------------------
+  # 2) Reportes de seguridad (dependencias + análisis estático)
+  # ------------------------------------------------------------------
+  security-scan:
+    name: Reportes de seguridad
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar herramientas de seguridad
+        run: pip install pip-audit bandit
+
+      - name: Auditoría de dependencias (pip-audit)
+        run: pip-audit -r requirements.txt -f json -o pip-audit-report.json || true
+
+      - name: Análisis estático de código (bandit)
+        run: bandit -r app config -f json -o bandit-report.json || true
+
+      - name: Subir reportes de seguridad
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            pip-audit-report.json
+            bandit-report.json
+
+  # ------------------------------------------------------------------
+  # 3) Pruebas E2E (Selenium) contra la app corriendo en un contenedor
+  # ------------------------------------------------------------------
+  e2e-tests:
+    name: Pruebas E2E (Selenium)
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Inicializar base de datos de demo
+        run: python scripts/database_setup.py
+
+      - name: Levantar la aplicación en segundo plano
+        run: |
+          nohup python run.py > flask.log 2>&1 &
+          npx wait-on http://localhost:5000/api/health -t 30000
+
+      - name: Instalar Chrome para Selenium
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Ejecutar suite Selenium E2E
+        env:
+          APP_BASE_URL: http://localhost:5000
+        run: pytest tests/test_e2e.py -v
+
+      - name: Mostrar logs de Flask si algo falla
+        if: failure()
+        run: cat flask.log
+
+  # ------------------------------------------------------------------
+  # 4) Build y push de la imagen Docker
+  # ------------------------------------------------------------------
+  docker-build:
+    name: Build de imagen Docker
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Iniciar sesión en Docker Hub
+        if: ${{ vars.DOCKERHUB_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build y push de la imagen
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ vars.DOCKERHUB_USERNAME != '' }}
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME && format('{0}/{1}:latest', vars.DOCKERHUB_USERNAME, env.IMAGE_NAME) || env.IMAGE_NAME }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ------------------------------------------------------------------
+  # 5) Deploy automático a producción
+  #    (usa un "deploy hook" — funciona igual para Render, Railway,
+  #    Fly.io o cualquier plataforma que soporte un webhook de deploy)
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy a producción
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Disparar deploy en la plataforma de hosting
+        run: |
+          if [ -n "${{ secrets.DEPLOY_HOOK_URL }}" ]; then
+            curl -fsS -X POST "${{ secrets.DEPLOY_HOOK_URL }}"
+            echo "Deploy disparado correctamente."
+          else
+            echo "DEPLOY_HOOK_URL no está configurado en Settings > Secrets. Omitiendo deploy automático."
+          fi
+
+      - name: Esperar y verificar salud del servidor en producción
+        if: ${{ env.PROD_URL != '' }}
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+        run: |
+          sleep 30
+          curl -fsS "$PROD_URL/api/health" | tee prod-health.json
