@@ -31,7 +31,8 @@ BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5000")
 @pytest.fixture(scope="module")
 def driver():
     options = Options()
-    options.add_argument("--headless=new")
+    if os.environ.get("HEADLESS", "true").lower() == "true":
+        options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1280,900")
