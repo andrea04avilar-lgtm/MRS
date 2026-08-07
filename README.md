@@ -130,4 +130,4 @@ Dockerfile, docker-compose.yml, .dockerignore
 ## 🔗 Enlaces
 
 - **Repositorio legado (código original sin modificar):** https://github.com/raviraj-p/MRS
-- **Enlace público de producción:** _(agregar aquí después del deploy)_
+- **Enlace público de producción:** https://mrs-k93i.onrender.com
