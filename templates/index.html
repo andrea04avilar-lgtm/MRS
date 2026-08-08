@@ -45,8 +45,8 @@
             <section class="input-section slide-in">
                 <form id="recommendationForm" class="modern-form">
                     <input type="text" id="movieTitle" placeholder="Enter a movie title" class="transition-all">
-                    <select id="genre" required class="transition-all">
-                        <option value="">Select a genre</option>
+                    <select id="genre" class="transition-all">
+                        <option value="">All genres</option>
                         <option value="Action">Action</option>
                         <option value="Comedy">Comedy</option>
                         <option value="Drama">Drama</option>
@@ -56,7 +56,7 @@
                         <option value="Thriller">Thriller</option>
                         <option value="Animation">Animation</option>
                     </select>
-                    <input type="number" id="minRating" placeholder="Minimum rating" min="0" max="10" step="0.1" required class="transition-all">
+                    <input type="number" id="minRating" placeholder="Minimum rating" min="0" max="10" step="0.1" value="0" class="transition-all">
                     <input type="number" id="numRecommendations" placeholder="Number of recommendations" min="1" max="20" value="10" required class="transition-all">
                     <button type="submit" id="getRecommendations" class="transition-all pulse-on-hover">Get Recommendations</button>
                 </form>
