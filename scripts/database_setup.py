@@ -31,21 +31,27 @@ def create_database():
                   searched_at TEXT NOT NULL DEFAULT (datetime('now')))''')
 
     # Insert sample data
+    # IMPORTANTE: los ids usados aqui son los IDs REALES de TMDB para estas
+    # peliculas (no numeros arbitrarios 1-5). Esto es necesario porque
+    # process_movie_from_db() usa movie.id para pedirle el poster/sinopsis
+    # a la API de TMDB — si el id no coincide con el id real de TMDB, la
+    # app pide datos de una pelicula distinta (o de ninguna) y el poster
+    # sale en blanco. Bug encontrado y corregido durante la reingenieria.
     movies = [
-        (1, "The Shawshank Redemption", "Drama", 9.3),
-        (2, "The Godfather", "Crime,Drama", 9.2),
-        (3, "The Dark Knight", "Action,Crime,Drama", 9.0),
-        (4, "Pulp Fiction", "Crime,Drama", 8.9),
-        (5, "Forrest Gump", "Drama,Romance", 8.8)
+        (278, "The Shawshank Redemption", "Drama", 9.3),
+        (238, "The Godfather", "Crime,Drama", 9.2),
+        (155, "The Dark Knight", "Action,Crime,Drama", 9.0),
+        (680, "Pulp Fiction", "Crime,Drama", 8.9),
+        (13, "Forrest Gump", "Drama,Romance", 8.8)
     ]
     c.executemany('INSERT OR REPLACE INTO movies VALUES (?,?,?,?)', movies)
 
     ratings = [
-        (1, 1, 1, 5.0),
-        (2, 1, 2, 4.5),
-        (3, 1, 3, 4.0),
-        (4, 2, 1, 4.0),
-        (5, 2, 4, 4.5)
+        (1, 1, 278, 5.0),
+        (2, 1, 238, 4.5),
+        (3, 1, 155, 4.0),
+        (4, 2, 278, 4.0),
+        (5, 2, 680, 4.5)
     ]
     c.executemany('INSERT OR REPLACE INTO ratings VALUES (?,?,?,?)', ratings)
 
